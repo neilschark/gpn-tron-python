@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "gpn-troy-python"
+version = "0.1.0"
+description = ""
+authors = [
+    "Neil Schark <github@schark.eu>"
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
