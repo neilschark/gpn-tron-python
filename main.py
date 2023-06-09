@@ -1,7 +1,7 @@
 import socket
 from gpnTron.bot import Bot
 
-HOST = "gpn-tron.duckdns.org"  # The server's hostname or IP address
+HOST = "localhost" #"gpn-tron.duckdns.org"  # The server's hostname or IP address
 PORT = 4000  # The port used by the server
 
 

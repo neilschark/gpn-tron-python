@@ -14,6 +14,10 @@ class Bot:
         self.last_map = []
         self.last_move_options = []
         self.last_direction = ""
+        self.last_left_x = 0
+        self.last_right_x = 0
+        self.last_top_y = 0
+        self.last_down_y = 0
 
     def login(self):
         self.session.sendall(b"join|tronminator|GktQCxssIwvUBOoU\n")
@@ -56,8 +60,13 @@ class Bot:
 
         left_x = (self.current_bot_x-1) % self.map_x
         right_x = (self.current_bot_x+1) % self.map_x
-        top_y = (self.current_bot_y+1) % self.map_y
-        down_y = (self.current_bot_y-1) % self.map_y
+        top_y = (self.current_bot_y-1) % self.map_y
+        down_y = (self.current_bot_y+1) % self.map_y
+
+        self.last_left_x = left_x
+        self.last_right_x = right_x
+        self.last_top_y = top_y
+        self.last_down_y = down_y
 
         if game_map[left_x][self.current_bot_y] == "o":
             move_options.append("left")
@@ -70,11 +79,19 @@ class Bot:
 
         self.last_move_options = move_options
 
-        if len(move_options) == 0:
-            move_options.append("up")
-        direction = random.choice(move_options)
+        try:
+            direction = random.choice(move_options)
+        except IndexError:
+            print("I am surrounded, no chance of survival. Goodbye")
+            direction = "up"
+
         self.last_direction = direction
 
+        ## debug
+        #print(f"current_x: {self.current_bot_x}, current_y: {self.current_bot_y}" )
+        #direction = "right"
+        #print("Next coordinates should have y+1")
+        ##
         command = f"move|{direction}\n"
         self.session.sendall(bytes(command, 'utf-8'))
         print(f"Moved {direction}")
@@ -95,20 +112,15 @@ class Bot:
 
     def lose(self):
         print("Bot lost")
-        print("Last map, options and direction:")
+        print("Last position, map, options and direction:")
         print(self.last_map)
         print(self.last_move_options)
         print(self.last_direction)
         print("#################")
 
     def parse_incoming_packet(self, string_data):
-        #print(string_data)
         string_data = string_data.split("\n")[0]
         splitted_string = string_data.split("|")
-        #print(splitted_string)
-        if "tick" in string_data:
-            print(string_data)
-            print(splitted_string)
 
         if splitted_string[0] == "game":
             self.new_game(int(splitted_string[3]), int(splitted_string[1]), int(splitted_string[2]))
@@ -124,8 +136,8 @@ class Bot:
             print("Player(s) died")
             self.remove_player_from_map(splitted_string[1])
         elif splitted_string[0] == "pos":
-            print("Got player(s) position(s)")
-            self.add_player_position_to_map(splitted_string[1], int(splitted_string[2]), int(splitted_string[3]))
+            print("Got player position")
+            self.add_player_position_to_map(int(splitted_string[1]), int(splitted_string[2]), int(splitted_string[3]))
         elif splitted_string[0] == "motd":
             print("Received message of the day")
         elif splitted_string[0] == "error":
