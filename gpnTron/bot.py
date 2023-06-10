@@ -16,7 +16,7 @@ class Bot:
         self.last_map = []
         self.last_move_options = []
         self.last_secondary_move_options = []
-        self.last_direction = ""
+        self.last_direction = "down"
         self.last_left_x = 0
         self.last_right_x = 0
         self.last_top_y = 0
@@ -33,6 +33,10 @@ class Bot:
         self.map_x = map_width
         self.map_y = map_height
         self.player_positions = {}
+        self.last_direction = "down"
+        self.last_map = []
+        self.last_move_options = []
+        self.last_secondary_move_options = []
 
         print(f"Map of this game: {self.map_x}x{self.map_y}")
 
@@ -108,6 +112,7 @@ class Bot:
 
         game_map = self.get_map_obstacles()
         self.last_map = game_map
+        self.print_map(game_map)
 
         left_x, right_x, top_y, down_y = self.get_surroundings(self.current_bot_x, self.current_bot_y)
 
@@ -179,7 +184,7 @@ class Bot:
             print("Player(s) died")
             self.remove_player_from_map(splitted_string[1])
         elif splitted_string[0] == "pos":
-            print("Got player position")
+            #print("Got player position")
             self.add_player_position_to_map(int(splitted_string[1]), int(splitted_string[2]), int(splitted_string[3]))
         elif splitted_string[0] == "motd":
             print("Received message of the day")
