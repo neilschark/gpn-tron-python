@@ -23,7 +23,7 @@ class Bot:
         self.last_down_y = 0
 
     def login(self):
-        self.session.sendall(bytes(f"join|{self.username}|{self.password}\n"))
+        self.session.sendall(bytes(f"join|{self.username}|{self.password}\n", "utf-8"))
 
     def new_game(self, bot_player_id, map_width, map_height):
         print("New game started")
