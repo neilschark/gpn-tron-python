@@ -2,8 +2,10 @@
 import random
 
 class Bot:
-    def __init__(self, input_session):
+    def __init__(self, input_session, username, password):
         self.session = input_session
+        self.username = username
+        self.password = password
         self.data_for_next_read = ""
         self.player_positions = {}
         self.bot_player_id = 0
@@ -21,7 +23,7 @@ class Bot:
         self.last_down_y = 0
 
     def login(self):
-        self.session.sendall(b"join|tronminator|GktQCxssIwvUBOoU\n")
+        self.session.sendall(bytes(f"join|{self.username}|{self.password}\n"))
 
     def new_game(self, bot_player_id, map_width, map_height):
         print("New game started")
