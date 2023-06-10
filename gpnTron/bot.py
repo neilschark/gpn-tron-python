@@ -29,8 +29,18 @@ class Bot:
         self.current_bot_y = 0
         self.map_x = map_width
         self.map_y = map_height
+        self.player_positions = {}
+        
         print(f"Map of this game: {self.map_x}x{self.map_y}")
 
+    @classmethod
+    def print_map(cls, game_map):
+        for y in range(0, len(game_map[0])):
+            line = ""
+            for x in range(0, len(game_map)):
+                line += f"|{game_map[x][y]}|"
+            print(line)
+        
     def play(self):
         session_as_file = self.session.makefile()
 
@@ -113,7 +123,7 @@ class Bot:
     def lose(self):
         print("Bot lost")
         print("Last position, map, options and direction:")
-        print(self.last_map)
+        self.print_map(self.last_map)
         print(self.last_move_options)
         print(self.last_direction)
         print("#################")
