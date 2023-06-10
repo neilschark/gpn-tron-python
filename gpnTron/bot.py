@@ -13,6 +13,7 @@ class Bot:
         self.map_y = 0
         self.last_map = []
         self.last_move_options = []
+        self.last_secondary_move_options = []
         self.last_direction = ""
         self.last_left_x = 0
         self.last_right_x = 0
@@ -30,7 +31,7 @@ class Bot:
         self.map_x = map_width
         self.map_y = map_height
         self.player_positions = {}
-        
+
         print(f"Map of this game: {self.map_x}x{self.map_y}")
 
     @classmethod
@@ -50,58 +51,86 @@ class Bot:
             #print("Received packet")
             self.parse_incoming_packet(str(byte_data))
 
+    def get_surroundings(self, x, y):
+        left_x = (x-1) % self.map_x
+        right_x = (x+1) % self.map_x
+        top_y = (y-1) % self.map_y
+        down_y = (y+1) % self.map_y
+
+        return left_x, right_x, top_y, down_y
+
+    def add_danger_zones_for_enemies(self, game_map, x, y):
+        left_x, right_x, top_y, down_y = self.get_surroundings(x, y)
+
+        if game_map[left_x][y] == "o":
+            game_map[left_x][y] = "!"
+        if game_map[right_x][y] == "o":
+            game_map[right_x][y] = "!"
+        if game_map[x][top_y] == "o":
+            game_map[x][top_y] = "!"
+        if game_map[x][down_y] == "o":
+            game_map[x][down_y] = "!"
+
     def get_map_obstacles(self):
         game_map = [['o'] * self.map_x for _ in range(self.map_y)]
         if len(self.player_positions) == 0:
             return game_map
     
-        for positions in self.player_positions.values():
+        for player_id, positions in self.player_positions.items():
             for position in positions:
-                game_map[position["x"]][position["y"]] = "!"
+                game_map[position["x"]][position["y"]] = "x"
+            if player_id != self.bot_player_id:
+                self.add_danger_zones_for_enemies(game_map, positions[-1]["x"], positions[-1]["y"])
         
         game_map[self.current_bot_x][self.current_bot_y] = "@"
         return game_map
 
-    def make_next_move(self):
+    @classmethod
+    def check_for_symbol(cls, game_map, symbol, left_x, right_x, top_y, down_y, x, y):
         move_options = []
+
+        if game_map[left_x][y] == symbol:
+            move_options.append("left")
+        if game_map[right_x][y] == symbol:
+            move_options.append("right")
+        if game_map[x][top_y] == symbol:
+            move_options.append("up")
+        if game_map[x][down_y] == symbol:
+            move_options.append("down")
+
+        return move_options
+
+    def make_next_move(self):
+        best_move_options = []
+        secondary_move_options = []
 
         game_map = self.get_map_obstacles()
         self.last_map = game_map
 
-        left_x = (self.current_bot_x-1) % self.map_x
-        right_x = (self.current_bot_x+1) % self.map_x
-        top_y = (self.current_bot_y-1) % self.map_y
-        down_y = (self.current_bot_y+1) % self.map_y
+        left_x, right_x, top_y, down_y = self.get_surroundings(self.current_bot_x, self.current_bot_y)
 
+        # For debugging
         self.last_left_x = left_x
         self.last_right_x = right_x
         self.last_top_y = top_y
         self.last_down_y = down_y
 
-        if game_map[left_x][self.current_bot_y] == "o":
-            move_options.append("left")
-        if game_map[right_x][self.current_bot_y] == "o":
-            move_options.append("right")
-        if game_map[self.current_bot_x][top_y] == "o":
-            move_options.append("up")
-        if game_map[self.current_bot_x][down_y] == "o":
-            move_options.append("down")
+        best_move_options = self.check_for_symbol(game_map, "o", left_x, right_x, top_y, down_y, self.current_bot_x, self.current_bot_y)
+        secondary_move_options = self.check_for_symbol(game_map, "!", left_x, right_x, top_y, down_y, self.current_bot_x, self.current_bot_y)
 
-        self.last_move_options = move_options
+        self.last_move_options = best_move_options
+        self.last_secondary_move_options = secondary_move_options
 
-        try:
-            direction = random.choice(move_options)
-        except IndexError:
+        if best_move_options:
+            direction = random.choice(best_move_options)
+        elif secondary_move_options:
+            direction = random.choice(secondary_move_options)
+        else:
             print("I am surrounded, no chance of survival. Goodbye")
             direction = "up"
 
         self.last_direction = direction
 
-        ## debug
-        #print(f"current_x: {self.current_bot_x}, current_y: {self.current_bot_y}" )
-        #direction = "right"
-        #print("Next coordinates should have y+1")
-        ##
         command = f"move|{direction}\n"
         self.session.sendall(bytes(command, 'utf-8'))
         print(f"Moved {direction}")
