@@ -123,7 +123,9 @@ class Bot:
         self.last_move_options = best_move_options
         self.last_secondary_move_options = secondary_move_options
 
-        if best_move_options:
+        if self.last_direction in best_move_options:
+            direction = self.last_direction
+        elif best_move_options:
             direction = random.choice(best_move_options)
         elif secondary_move_options:
             direction = random.choice(secondary_move_options)
